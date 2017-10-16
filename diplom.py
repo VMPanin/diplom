@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import os
 
 
 token = os.getenv('token_vk_diplom')
@@ -10,7 +11,7 @@ user_id = input('Введите id пользователя (ex. 5030613):')
 
 def get_my_groups():
     """
-    получаем группы друзей пользователя в двух списках:
+    получаем группы пользователя в двух списках:
     - полные данные о группах
     - только id группы
     """
@@ -25,7 +26,7 @@ def get_my_groups():
     response = requests.get('https://api.vk.com/method/groups.get', params)
     groups_list = response.json()['response']['items']
     print("...")
-# Создаем список только id групп
+    # Создаем список только id групп
     group_list_id = []
     for group in groups_list:
         group_list_id.append(group['id'])
@@ -46,8 +47,7 @@ def get_my_friends():
     return friend_list
 
 
-def get_group_list():
-    friend_list = get_my_friends()
+def get_group_list(friend_list):
     all_groups = []
     try:
         for friend in friend_list:
@@ -73,25 +73,23 @@ def get_group_list():
     return all_groups
 
 
-def get_target_groups():
+def get_target_groups(all_groups_of_users, my_groups):
     """
     просто находим целевое множество id групп
     """
-    all_groups_of_users = get_group_list()
     sum_of_all_groups = sum(all_groups_of_users, [])
     unique_groups = set(sum_of_all_groups)
-    set_of_groups_target_user = set(get_my_groups()[1])
+    set_of_groups_target_user = set(my_groups[1])
     target_groups = set_of_groups_target_user.difference(unique_groups)
 
     return target_groups
 
 
-def get_target_group_for_json():
+def get_target_group_for_json(my_groups, target_groups):
     """
     Подготовим список для сохранения в файл
     """
-    groups_of_target_user = get_my_groups()[0]
-    target_groups = get_target_groups()
+    groups_of_target_user = my_groups[0]
     final_groups = []
     for group in target_groups:
         for group1 in groups_of_target_user:
@@ -110,9 +108,22 @@ def get_target_group_for_json():
     return all_groups_for_json
 
 
-def save_json():
+def save_json(target_groups_json):
     with open('groups.json', 'w', encoding='utf8') as f:
-        json.dump(get_target_group_for_json(), f, indent=1, ensure_ascii=False)
+        json.dump(target_groups_json, f, indent=1, ensure_ascii=False)
 
 
-save_json()
+def main():
+    # получаем список групп друзей
+    group_list = get_group_list(get_my_friends())
+    # получаем список групп целевого прользователя
+    my_groups = get_my_groups()
+    # получаем id целевых групп
+    target_groups = get_target_groups(group_list, my_groups)
+    # получаем целевые группы с нужной расширенной информацией
+    target_groups_json = get_target_group_for_json(my_groups, target_groups)
+    # сохраняем целевые группы в формате json
+    save_json(target_groups_json)
+
+if __name__ == '__main__':
+    main()
