@@ -6,10 +6,9 @@ import os
 
 token = os.getenv('token_vk_diplom')
 VERSION = '5.67'
-user_id = input('Введите id пользователя (ex. 5030613):')
 
 
-def get_my_groups():
+def get_my_groups(user_id):
     """
     получаем группы пользователя в двух списках:
     - полные данные о группах
@@ -34,7 +33,7 @@ def get_my_groups():
     return groups_list, group_list_id
 
 
-def get_my_friends():
+def get_my_friends(user_id):
     params = {
         'access_token': token,
         'v': VERSION,
@@ -114,10 +113,13 @@ def save_json(target_groups_json):
 
 
 def main():
+    user_id = input('Введите id пользователя (ex. 5030613):')
+    # получаем список друзей целевого пользователя
+    my_friends = get_my_friends(user_id)
     # получаем список групп друзей
-    group_list = get_group_list(get_my_friends())
+    group_list = get_group_list(my_friends)
     # получаем список групп целевого прользователя
-    my_groups = get_my_groups()
+    my_groups = get_my_groups(user_id)
     # получаем id целевых групп
     target_groups = get_target_groups(group_list, my_groups)
     # получаем целевые группы с нужной расширенной информацией
